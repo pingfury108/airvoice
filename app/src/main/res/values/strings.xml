@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">空音输入法</string>
+    <string name="subtype_label">空音语音输入</string>
+    <string name="mic_hint">按住 说话</string>
+</resources>

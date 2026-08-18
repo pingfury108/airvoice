@@ -1,0 +1,12 @@
+# 构建产物
+build/
+*/build/
+.gradle/
+local.properties
+*.iml
+.idea/
+
+# 大体积依赖：由 scripts/download-deps.sh 在目标机器下载（rdev 不同步）
+app/libs/*.aar
+app/src/main/assets/models/*
+!app/src/main/assets/models/README.txt
