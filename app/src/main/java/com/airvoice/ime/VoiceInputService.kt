@@ -19,7 +19,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlin.math.sqrt
 
 class VoiceInputService : InputMethodService() {
@@ -27,13 +26,12 @@ class VoiceInputService : InputMethodService() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val prefs by lazy { getSharedPreferences(Prefs.NAME, MODE_PRIVATE) }
     private lateinit var asr: AsrEngine
-    private lateinit var vad: VadProcessor
 
     private var recorder: AudioRecorder? = null
     private var collectJob: Job? = null
+    private val pcmChunks = mutableListOf<FloatArray>()
     private var cancelled = false
-    private val segmentJobs = mutableListOf<Job>()
-    private val commitStack = ArrayDeque<Int>() // 每句上屏长度，用于撤回
+    private val commitStack = ArrayDeque<Int>() // 每次上屏长度，用于撤回
 
     private lateinit var statusText: TextView
     private lateinit var micButton: Button
@@ -46,7 +44,6 @@ class VoiceInputService : InputMethodService() {
             try {
                 Log.i(TAG, "model init start")
                 asr.init(prefs.getString(Prefs.KEY_LANGUAGE, "") ?: "")
-                withContext(Dispatchers.Default) { vad = VadProcessor(assets) }
                 Log.i(TAG, "model init done")
                 setStatus("就绪，按住说话")
             } catch (e: Exception) {
@@ -74,11 +71,11 @@ class VoiceInputService : InputMethodService() {
                     true
                 }
                 MotionEvent.ACTION_UP -> {
-                    stopRecording(cancelled)
+                    stopRecordingAndRecognize(cancelled)
                     true
                 }
                 MotionEvent.ACTION_CANCEL -> {
-                    stopRecording(cancel = true)
+                    stopRecordingAndRecognize(cancel = true)
                     true
                 }
                 else -> false
@@ -201,82 +198,81 @@ class VoiceInputService : InputMethodService() {
             startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             return
         }
-        if (!asr.isReady || !::vad.isInitialized) {
+        if (!asr.isReady) {
             setStatus("模型加载中…")
             return
         }
 
+        pcmChunks.clear()
         val rec = AudioRecorder()
         recorder = rec
         rec.start(serviceScope)
         setStatus("🎤 录音中… 上滑取消")
         micButton.text = "松手结束 · 上滑取消"
+        micButton.setBackgroundResource(R.drawable.bg_mic_recording)
 
-        // 采集协程：PCM → 音量条 + VAD 分句 → 逐句识别上屏（伪流式）
         collectJob = serviceScope.launch(Dispatchers.Default) {
             var total = 0
             var tick = 0
             rec.chunks.collect { chunk ->
                 if (total >= MAX_SAMPLES) return@collect
+                pcmChunks.add(chunk)
                 total += chunk.size
 
                 if (++tick % 3 == 0) { // ~120ms 刷新一次音量条
                     val rms = sqrt(chunk.fold(0.0) { acc, v -> acc + v * v } / chunk.size)
                     val level = (rms * 40).toInt().coerceIn(1, 10)
-                    withContext(Dispatchers.Main) {
+                    launch(Dispatchers.Main) {
                         setStatus("🎤 " + "▮".repeat(level) + "▯".repeat(10 - level))
                     }
                 }
-
-                for (segment in vad.accept(chunk)) {
-                    recognizeSegment(segment)
-                }
             }
         }
     }
 
-    /** 单句识别并上屏。asr 串行 dispatcher + Main 有序回调保证提交顺序 */
-    private fun recognizeSegment(samples: FloatArray) {
-        val t0 = System.currentTimeMillis()
-        val job = serviceScope.launch {
-            val text = asr.recognize(samples)
-            val cost = System.currentTimeMillis() - t0
-            Log.i(TAG, "segment %.1fs, infer %dms: %s".format(samples.size / 16000f, cost, text))
-            if (text.isNotEmpty() && !cancelled) {
-                currentInputConnection?.commitText(text, 1)
-                commitStack.addLast(text.length)
-            }
-        }
-        segmentJobs.add(job)
-        job.invokeOnCompletion { segmentJobs.remove(job) }
-    }
-
-    private fun stopRecording(cancel: Boolean) {
+    private fun stopRecordingAndRecognize(cancel: Boolean) {
         val rec = recorder ?: return
         recorder = null
         rec.stop()
+        collectJob?.cancel()
+        collectJob = null
         micButton.text = getString(R.string.mic_hint)
+        micButton.setBackgroundResource(R.drawable.bg_mic)
 
+        if (cancel) {
+            pcmChunks.clear()
+            setStatus("已取消")
+            return
+        }
+
+        val total = pcmChunks.sumOf { it.size }
+        if (total < AsrEngine.SAMPLE_RATE / 4) { // 少于 0.25s 视为误触
+            pcmChunks.clear()
+            setStatus("说话时间太短")
+            return
+        }
+
+        val samples = FloatArray(total)
+        var offset = 0
+        for (chunk in pcmChunks) {
+            chunk.copyInto(samples, offset)
+            offset += chunk.size
+        }
+        pcmChunks.clear()
+
+        setStatus("识别中…")
         serviceScope.launch {
-            collectJob?.join() // 等采集协程退出，保证 VAD 单线程访问
-            collectJob = null
-
-            if (cancel) {
-                vad.reset()
-                setStatus("已取消")
-                return@launch
+            val t0 = System.currentTimeMillis()
+            val text = asr.recognize(samples)
+            val cost = System.currentTimeMillis() - t0
+            Log.i(TAG, "utterance %.1fs, infer %dms: %s".format(samples.size / 16000f, cost, text))
+            if (text.isNotEmpty()) {
+                currentInputConnection?.commitText(text, 1)
+                commitStack.addLast(text.length)
+                setStatus("就绪，按住说话")
+            } else {
+                setStatus("未识别到内容")
             }
-
-            val tail = withContext(Dispatchers.Default) { vad.flush() }
-            for (segment in tail) recognizeSegment(segment)
-
-            if (segmentJobs.isEmpty()) {
-                setStatus("未检测到语音")
-                return@launch
-            }
-            setStatus("识别中…")
-            segmentJobs.toList().forEach { it.join() }
-            setStatus("就绪，按住说话")
         }
     }
 

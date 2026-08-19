@@ -1,96 +1,111 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp">
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:text="@string/app_name" />
-
-    <TextView
-        android:id="@+id/statusText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
-        android:textSize="14sp"
-        android:lineSpacingMultiplier="1.4" />
-
-    <Button
-        android:id="@+id/btnPermission"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:text="1. 申请录音权限" />
-
-    <Button
-        android:id="@+id/btnEnableIme"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:text="2. 启用空音输入法" />
-
-    <Button
-        android:id="@+id/btnSwitchIme"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:text="3. 切换为空音输入法" />
-
-    <Button
-        android:id="@+id/btnBattery"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:text="4. 后台保活（防杀进程）" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:textSize="14sp"
-        android:text="识别语言（下次呼出键盘生效）" />
+    android:background="#ECEFF1">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#111827"
+            android:text="@string/app_name" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="16dp"
+            android:textSize="13sp"
+            android:textColor="#6B7280"
+            android:text="完全离线 · 零隐私泄漏 · 支持中文/粤语/英语" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="@drawable/bg_card">
+
+            <TextView
+                android:id="@+id/statusText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="#374151"
+                android:lineSpacingMultiplier="1.5" />
+        </LinearLayout>
 
         <Button
-            android:id="@+id/btnLangAuto"
-            style="@style/KeyButton"
-            android:layout_height="44dp"
-            android:text="自动" />
+            android:id="@+id/btnPermission"
+            style="@style/GuideButton"
+            android:text="1. 申请录音权限" />
 
         <Button
-            android:id="@+id/btnLangZh"
-            style="@style/KeyButton"
-            android:layout_height="44dp"
-            android:text="中文" />
+            android:id="@+id/btnEnableIme"
+            style="@style/GuideButton"
+            android:text="2. 启用空音输入法" />
 
         <Button
-            android:id="@+id/btnLangYue"
-            style="@style/KeyButton"
-            android:layout_height="44dp"
-            android:text="粤语" />
+            android:id="@+id/btnSwitchIme"
+            style="@style/GuideButton"
+            android:text="3. 切换为空音输入法" />
 
         <Button
-            android:id="@+id/btnLangEn"
-            style="@style/KeyButton"
-            android:layout_height="44dp"
-            android:text="English" />
+            android:id="@+id/btnBattery"
+            style="@style/GuideButton"
+            android:text="4. 后台保活（防杀进程）" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="6dp"
+            android:textSize="13sp"
+            android:textColor="#6B7280"
+            android:text="识别语言（下次呼出键盘生效）" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnLangAuto"
+                style="@style/KeyButton"
+                android:text="自动" />
+
+            <Button
+                android:id="@+id/btnLangZh"
+                style="@style/KeyButton"
+                android:text="中文" />
+
+            <Button
+                android:id="@+id/btnLangYue"
+                style="@style/KeyButton"
+                android:text="粤语" />
+
+            <Button
+                android:id="@+id/btnLangEn"
+                style="@style/KeyButton"
+                android:text="English" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textSize="12sp"
+            android:textColor="#9CA3AF"
+            android:lineSpacingMultiplier="1.4"
+            android:text="小米/MIUI 还需手动：设置 → 应用管理 → 空音输入法 → 省电策略选「无限制」并开启自启动" />
     </LinearLayout>
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:textSize="12sp"
-        android:textColor="#999999"
-        android:text="小米/MIUI 还需手动：设置 → 应用管理 → 空音输入法 → 省电策略选「无限制」并开启自启动" />
-</LinearLayout>
+</ScrollView>

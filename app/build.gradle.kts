@@ -1,6 +1,14 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     kotlin("android")
+}
+
+// 发布签名配置（仅存于构建机，不入库；缺失时 release 构建保持未签名）
+val keystoreProps = Properties().apply {
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
 }
 
 android {
@@ -13,6 +21,26 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "0.1.0"
+
+        ndk { abiFilters += listOf("arm64-v8a") } // 只打真机架构，去掉 x86 模拟器库
+    }
+
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProps.getProperty("keyAlias", "")
+            keyPassword = keystoreProps.getProperty("keyPassword", "")
+            storePassword = keystoreProps.getProperty("storePassword", "")
+            keystoreProps.getProperty("storeFile")?.let { storeFile = file(it) }
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false // JNI 调用多，暂不开混淆
+            if (keystoreProps.getProperty("storeFile") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
     }
 
     compileOptions {

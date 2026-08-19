@@ -10,3 +10,7 @@ local.properties
 app/libs/*.aar
 app/src/main/assets/models/*
 !app/src/main/assets/models/README.txt
+
+# 发布签名（仅存于构建机，不入库）
+keystore.properties
+*.jks

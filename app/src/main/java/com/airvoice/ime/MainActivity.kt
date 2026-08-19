@@ -15,6 +15,7 @@ import android.widget.TextView
 class MainActivity : Activity() {
 
     private lateinit var statusText: TextView
+    private lateinit var langButtons: Map<Int, String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,7 +41,7 @@ class MainActivity : Activity() {
         }
 
         // 识别语言锁定（空串 = auto 自动检测）
-        val langButtons = mapOf(
+        langButtons = mapOf(
             R.id.btnLangAuto to "",
             R.id.btnLangZh to "zh",
             R.id.btnLangYue to "yue",
@@ -93,6 +94,18 @@ class MainActivity : Activity() {
             append(if (imeEnabled) "✓" else "✗").append(" 输入法已启用").append('\n')
             append(if (batteryUnrestricted) "✓" else "✗").append(" 电池优化已忽略（防杀进程）").append('\n')
             append("ℹ 识别语言：$langLabel")
+        }
+
+        // 语言选中高亮
+        for ((id, l) in langButtons) {
+            val btn = findViewById<Button>(id)
+            if (l == lang) {
+                btn.setBackgroundResource(R.drawable.bg_key_enter)
+                btn.setTextColor(0xFF3D5AFE.toInt())
+            } else {
+                btn.setBackgroundResource(R.drawable.bg_key)
+                btn.setTextColor(0xFF374151.toInt())
+            }
         }
     }
 

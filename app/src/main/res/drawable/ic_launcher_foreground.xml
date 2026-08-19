@@ -1,0 +1,32 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 内容居中到 108 画布（源 SVG 视觉中心 y=50，下移 4dp 对齐自适应图标安全区） -->
+    <group android:translateY="4">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M54,32 C50.1,32 47,35.1 47,39 L47,61 C47,64.9 50.1,68 54,68 C57.9,68 61,64.9 61,61 L61,39 C61,35.1 57.9,32 54,32 Z" />
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="3.5"
+            android:strokeLineCap="round"
+            android:pathData="M38,44 a13,13 0 0 0 0,12" />
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="3.5"
+            android:strokeLineCap="round"
+            android:pathData="M31,40 a21,21 0 0 0 0,20" />
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="3.5"
+            android:strokeLineCap="round"
+            android:pathData="M70,44 a13,13 0 0 1 0,12" />
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="3.5"
+            android:strokeLineCap="round"
+            android:pathData="M77,40 a21,21 0 0 1 0,20" />
+    </group>
+</vector>
