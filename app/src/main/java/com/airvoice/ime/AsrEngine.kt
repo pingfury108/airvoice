@@ -1,6 +1,7 @@
 package com.airvoice.ime
 
 import android.content.res.AssetManager
+import android.util.Log
 import com.k2fsa.sherpa.onnx.OfflineModelConfig
 import com.k2fsa.sherpa.onnx.OfflineRecognizer
 import com.k2fsa.sherpa.onnx.OfflineRecognizerConfig
@@ -10,7 +11,7 @@ import kotlinx.coroutines.withContext
 
 /**
  * 封装 sherpa-onnx 离线识别器（SenseVoice-Small）。
- * 所有推理串行在单线程 dispatcher 上执行。
+ * 所有推理串行在单线程 dispatcher 上执行（保证提交顺序）。
  */
 class AsrEngine(private val assets: AssetManager) {
 
@@ -21,22 +22,35 @@ class AsrEngine(private val assets: AssetManager) {
     var isReady = false
         private set
 
-    suspend fun init() = withContext(dispatcher) {
-        if (recognizer != null) return@withContext
+    @Volatile
+    var language: String = ""
+        private set
+
+    /**
+     * 初始化或按语言重建识别器。
+     * @param language ""=auto 自动检测, "zh"/"yue"/"en"/"ja"/"ko" 强制语种
+     */
+    suspend fun init(language: String = "") = withContext(dispatcher) {
+        if (recognizer != null && this@AsrEngine.language == language) return@withContext
+        recognizer = null
+        isReady = false
         val config = OfflineRecognizerConfig(
             modelConfig = OfflineModelConfig(
                 senseVoice = OfflineSenseVoiceModelConfig(
                     model = ModelPaths.SENSE_VOICE,
+                    language = language,
                     useInverseTextNormalization = true,
                 ),
                 tokens = ModelPaths.TOKENS,
-                numThreads = 2,
+                numThreads = 4,
                 provider = "cpu",
                 debug = false,
             ),
         )
         recognizer = OfflineRecognizer(assetManager = assets, config = config)
+        this@AsrEngine.language = language
         isReady = true
+        Log.i(TAG, "recognizer ready, language=${language.ifEmpty { "auto" }}")
     }
 
     /** 整段识别。samples 为 16kHz float PCM */
@@ -60,5 +74,6 @@ class AsrEngine(private val assets: AssetManager) {
 
     companion object {
         const val SAMPLE_RATE = 16000
+        private const val TAG = "AirVoice"
     }
 }

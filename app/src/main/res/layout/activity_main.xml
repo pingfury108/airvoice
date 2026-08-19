@@ -46,7 +46,45 @@
         android:id="@+id/btnBattery"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
         android:text="4. 后台保活（防杀进程）" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textSize="14sp"
+        android:text="识别语言（下次呼出键盘生效）" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnLangAuto"
+            style="@style/KeyButton"
+            android:layout_height="44dp"
+            android:text="自动" />
+
+        <Button
+            android:id="@+id/btnLangZh"
+            style="@style/KeyButton"
+            android:layout_height="44dp"
+            android:text="中文" />
+
+        <Button
+            android:id="@+id/btnLangYue"
+            style="@style/KeyButton"
+            android:layout_height="44dp"
+            android:text="粤语" />
+
+        <Button
+            android:id="@+id/btnLangEn"
+            style="@style/KeyButton"
+            android:layout_height="44dp"
+            android:text="English" />
+    </LinearLayout>
 
     <TextView
         android:layout_width="match_parent"

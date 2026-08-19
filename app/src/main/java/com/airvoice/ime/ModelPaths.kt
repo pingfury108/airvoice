@@ -12,3 +12,9 @@ object ModelPaths {
         runCatching { context.assets.open(path).close() }.isSuccess
     }
 }
+
+/** SharedPreferences 约定 */
+object Prefs {
+    const val NAME = "settings"
+    const val KEY_LANGUAGE = "language" // ""=auto, zh/yue/en
+}

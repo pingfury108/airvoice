@@ -25,7 +25,7 @@ class AudioRecorder {
         val format = AudioFormat.ENCODING_PCM_16BIT
         val minBuf = AudioRecord.getMinBufferSize(AsrEngine.SAMPLE_RATE, channel, format)
         val record = AudioRecord(
-            MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+            MediaRecorder.AudioSource.MIC, // 原始麦克风；VOICE_COMMUNICATION 的降噪会吃掉轻声语音
             AsrEngine.SAMPLE_RATE, channel, format, minBuf * 2,
         )
         audioRecord = record

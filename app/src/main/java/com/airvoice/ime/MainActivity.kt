@@ -38,6 +38,21 @@ class MainActivity : Activity() {
                 ),
             )
         }
+
+        // 识别语言锁定（空串 = auto 自动检测）
+        val langButtons = mapOf(
+            R.id.btnLangAuto to "",
+            R.id.btnLangZh to "zh",
+            R.id.btnLangYue to "yue",
+            R.id.btnLangEn to "en",
+        )
+        for ((id, lang) in langButtons) {
+            findViewById<Button>(id).setOnClickListener {
+                getSharedPreferences(Prefs.NAME, MODE_PRIVATE)
+                    .edit().putString(Prefs.KEY_LANGUAGE, lang).apply()
+                refreshStatus()
+            }
+        }
     }
 
     override fun onResume() {
@@ -63,12 +78,21 @@ class MainActivity : Activity() {
             ?.enabledInputMethodList?.any { it.packageName == packageName } == true
         val batteryUnrestricted = getSystemService(PowerManager::class.java)
             ?.isIgnoringBatteryOptimizations(packageName) == true
+        val lang = getSharedPreferences(Prefs.NAME, MODE_PRIVATE)
+            .getString(Prefs.KEY_LANGUAGE, "") ?: ""
+        val langLabel = when (lang) {
+            "zh" -> "中文"
+            "yue" -> "粤语"
+            "en" -> "English"
+            else -> "自动"
+        }
 
         statusText.text = buildString {
             append(if (modelReady) "✓" else "✗").append(" 识别模型").append('\n')
             append(if (audioGranted) "✓" else "✗").append(" 录音权限").append('\n')
             append(if (imeEnabled) "✓" else "✗").append(" 输入法已启用").append('\n')
-            append(if (batteryUnrestricted) "✓" else "✗").append(" 电池优化已忽略（防杀进程）")
+            append(if (batteryUnrestricted) "✓" else "✗").append(" 电池优化已忽略（防杀进程）").append('\n')
+            append("ℹ 识别语言：$langLabel")
         }
     }
 

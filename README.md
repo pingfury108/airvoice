@@ -37,16 +37,17 @@ rdev adb logcat -s airvoice:V
 ## 里程碑
 
 - [x] M1 最小可用：按住说话 → 松手整段识别上屏
-- [ ] M2 伪流式：silero-vad 分句，边说边出字
-- [ ] M3 体验完善：音量波形、撤销键、设置页（语言切换）
+- [x] M2 伪流式：silero-vad 分句，边说边出字
+- [x] M3 体验完善：音量条、撤回键、智能回车、十字方向键、语言锁定（auto/zh/yue/en）
 
 ## 目录
 
 ```
 app/src/main/java/com/airvoice/ime/
 ├── MainActivity.kt        # 引导页（权限/启用/切换）
-├── VoiceInputService.kt   # InputMethodService 入口
-├── AsrEngine.kt           # sherpa-onnx 封装（单线程串行推理）
+├── VoiceInputService.kt   # InputMethodService 入口（VAD 流式分句上屏）
+├── AsrEngine.kt           # sherpa-onnx 封装（单线程串行推理，支持语言锁定重建）
+├── VadProcessor.kt        # silero-vad 端点检测（PCM 流 → 完整句子）
 ├── AudioRecorder.kt       # AudioRecord 16kHz 单声道采集
-└── ModelPaths.kt          # assets 模型路径约定
+└── ModelPaths.kt          # assets 模型路径 + SharedPreferences 约定
 ```

@@ -43,6 +43,11 @@
             android:text="。" />
 
         <Button
+            android:id="@+id/btnUndo"
+            style="@style/KeyButton"
+            android:text="撤回" />
+
+        <Button
             android:id="@+id/btnDelete"
             style="@style/KeyButton"
             android:layout_weight="1.5"
