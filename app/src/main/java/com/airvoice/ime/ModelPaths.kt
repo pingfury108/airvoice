@@ -17,4 +17,6 @@ object ModelPaths {
 object Prefs {
     const val NAME = "settings"
     const val KEY_LANGUAGE = "language" // ""=auto, zh/yue/en
+    const val KEY_FLOAT_X = "float_x"   // 横屏悬浮卡片位置
+    const val KEY_FLOAT_Y = "float_y"
 }

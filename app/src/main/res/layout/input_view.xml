@@ -28,6 +28,11 @@
             android:text="🌐" />
 
         <Button
+            android:id="@+id/btnKeyPanel"
+            style="@style/KeyButton"
+            android:text="⌨" />
+
+        <Button
             android:id="@+id/btnHide"
             style="@style/KeyButton"
             android:text="▼" />
@@ -54,11 +59,16 @@
             android:text="⌫" />
     </LinearLayout>
 
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:layout_marginTop="4dp"
-        android:orientation="horizontal">
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp">
+
+        <LinearLayout
+            android:id="@+id/voicePanel"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:orientation="horizontal">
 
         <Button
             android:id="@+id/micButton"
@@ -148,5 +158,14 @@
                 android:background="@drawable/bg_key_enter"
                 android:text="⏎" />
         </LinearLayout>
-    </LinearLayout>
+        </LinearLayout>
+
+        <!-- 按键面板：内容由 KeyPanel 代码生成 -->
+        <LinearLayout
+            android:id="@+id/keyPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone" />
+    </FrameLayout>
 </LinearLayout>
