@@ -17,6 +17,8 @@ object ModelPaths {
 object Prefs {
     const val NAME = "settings"
     const val KEY_LANGUAGE = "language" // ""=auto, zh/yue/en
-    const val KEY_FLOAT_X = "float_x"   // 横屏悬浮卡片位置
+    const val KEY_FLOAT_X = "float_x"   // 横屏悬浮组件位置
     const val KEY_FLOAT_Y = "float_y"
+    const val KEY_API_ENABLED = "api_enabled" // 局域网识别 API 开关（默认关）
+    const val KEY_API_TOKEN = "api_token"     // X-Token，空=不鉴权
 }

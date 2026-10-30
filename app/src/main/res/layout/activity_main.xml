@@ -103,6 +103,57 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:layout_marginBottom="6dp"
+            android:textSize="13sp"
+            android:textColor="#6B7280"
+            android:text="局域网识别 API（默认关闭；网络权限仅用于本机监听，绝无数据外发）" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="@drawable/bg_card">
+
+            <Switch
+                android:id="@+id/swApi"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="#374151"
+                android:text="启用 HTTP 服务（:8787）" />
+
+            <TextView
+                android:id="@+id/tvApiAddr"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textSize="13sp"
+                android:fontFamily="monospace"
+                android:textColor="#374151"
+                android:text="地址：未启动" />
+
+            <Button
+                android:id="@+id/btnCopyApi"
+                style="@style/KeyButton"
+                android:layout_width="match_parent"
+                android:layout_marginTop="8dp"
+                android:text="复制地址" />
+
+            <EditText
+                android:id="@+id/etToken"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textSize="13sp"
+                android:hint="X-Token 鉴权（留空=不鉴权）"
+                android:inputType="text" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:textSize="12sp"
             android:textColor="#9CA3AF"
             android:lineSpacingMultiplier="1.4"

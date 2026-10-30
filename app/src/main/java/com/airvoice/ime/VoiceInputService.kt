@@ -34,7 +34,6 @@ class VoiceInputService : InputMethodService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val prefs by lazy { getSharedPreferences(Prefs.NAME, MODE_PRIVATE) }
-    private lateinit var asr: AsrEngine
 
     private var recorder: AudioRecorder? = null
     private var collectJob: Job? = null
@@ -49,11 +48,10 @@ class VoiceInputService : InputMethodService() {
 
     override fun onCreate() {
         super.onCreate()
-        asr = AsrEngine(assets)
         serviceScope.launch {
             try {
                 Log.i(TAG, "model init start")
-                asr.init(prefs.getString(Prefs.KEY_LANGUAGE, "") ?: "")
+                EnginePool.ensure(this@VoiceInputService, prefs.getString(Prefs.KEY_LANGUAGE, "") ?: "")
                 Log.i(TAG, "model init done")
                 setStatus("就绪，按住说话")
             } catch (e: Exception) {
@@ -153,7 +151,7 @@ class VoiceInputService : InputMethodService() {
     private fun syncStatus() {
         when {
             !ModelPaths.ready(this) -> setStatus("模型缺失：请先执行 scripts/download-deps.sh 并重新安装")
-            !::asr.isInitialized || !asr.isReady -> setStatus("模型加载中…")
+            EnginePool.tryReady() == null -> setStatus("模型加载中…")
             else -> setStatus("就绪，按住说话")
         }
     }
@@ -349,11 +347,12 @@ class VoiceInputService : InputMethodService() {
         }
         // 语言设置变化时重建识别器
         val lang = prefs.getString(Prefs.KEY_LANGUAGE, "") ?: ""
-        if (::asr.isInitialized && asr.isReady && lang != asr.language) {
+        val ready = EnginePool.tryReady()
+        if (ready != null && ready.language != lang) {
             setStatus("切换识别语言…")
             serviceScope.launch {
                 try {
-                    asr.init(lang)
+                    EnginePool.ensure(this@VoiceInputService, lang)
                     setStatus("就绪，按住说话")
                 } catch (e: Exception) {
                     Log.e(TAG, "language switch failed", e)
@@ -384,7 +383,7 @@ class VoiceInputService : InputMethodService() {
             startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             return
         }
-        if (!asr.isReady) {
+        if (EnginePool.tryReady() == null) {
             setStatus("模型加载中…")
             return
         }
@@ -450,7 +449,11 @@ class VoiceInputService : InputMethodService() {
         if (isLandscape) micButton.setBackgroundResource(R.drawable.bg_mic_ball_processing)
         serviceScope.launch {
             val t0 = System.currentTimeMillis()
-            val text = asr.recognize(samples)
+            val text = EnginePool.recognize(
+                this@VoiceInputService,
+                prefs.getString(Prefs.KEY_LANGUAGE, "") ?: "",
+                samples,
+            )
             val cost = System.currentTimeMillis() - t0
             Log.i(TAG, "utterance %.1fs, infer %dms: %s".format(samples.size / 16000f, cost, text))
             if (isLandscape) micButton.setBackgroundResource(R.drawable.bg_mic_ball)
@@ -470,7 +473,7 @@ class VoiceInputService : InputMethodService() {
 
     override fun onDestroy() {
         recorder?.stop()
-        asr.release()
+        // 不释放 EnginePool：模型由常驻 API 服务/进程共享，IME 销毁不应卸载
         serviceScope.cancel()
         super.onDestroy()
     }

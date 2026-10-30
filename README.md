@@ -38,15 +38,39 @@ rdev adb logcat -s airvoice:V
 
 - [x] M1 最小可用：按住说话 → 松手整段识别上屏
 - [x] M3 体验完善：音量条、撤回键、智能回车、十字方向键、语言锁定（auto/zh/yue/en）
+- [x] M4 局域网识别 API：常驻 HTTP 服务，任意程序 POST 音频返回文字
 - [-] ~~M2 伪流式~~：VAD 分句在低端机上延迟不稳定，已回退为整段识别（代码见 git 历史）
+
+## 局域网识别 API（v0.3.0+）
+
+App 内打开「局域网识别 API」开关后，同一 WiFi 下任意程序可将音频发到手机识别：
+
+```bash
+# WAV（PCM16，任意采样率/单双声道均可）
+curl --data-binary @a.wav http://<手机IP>:8787/recognize
+
+# 裸 PCM（s16le 16k mono，适合录音管道）
+arecord -f S16_LE -r 16000 -c 1 | curl --data-binary @- "http://<手机IP>:8787/recognize?fmt=pcm"
+
+# → {"text":"今天天气不错。","ms":820}
+```
+
+- `GET /health` 探活 → `{"ready":true}`
+- 请求头 `X-Token` 鉴权（App 内设置，留空 = 不鉴权）
+- 引擎串行：忙时返回 `409`，稍后重试
+- `INTERNET` 权限仅用于监听本机端口，代码零出站连接；App 内可一键关闭服务
 
 ## 目录
 
 ```
 app/src/main/java/com/airvoice/ime/
-├── MainActivity.kt        # 引导页（权限/启用/切换）
+├── MainActivity.kt        # 引导页（权限/启用/切换/API 设置）
 ├── VoiceInputService.kt   # InputMethodService 入口（整段识别上屏）
 ├── AsrEngine.kt           # sherpa-onnx 封装（单线程串行推理，支持语言锁定重建）
+├── EnginePool.kt          # 进程级共享引擎（IME 与 API 共用，模型只加载一份）
 ├── AudioRecorder.kt       # AudioRecord 16kHz 单声道采集
+├── AsrServer.kt           # NanoHTTPD：/health /recognize（WAV/PCM 解析）
+├── ResidentService.kt     # 常驻前台服务（挂载 API，通知栏显示地址）
+├── BootReceiver.kt        # 开机自启（开关打开时）
 └── ModelPaths.kt          # assets 模型路径 + SharedPreferences 约定
 ```
