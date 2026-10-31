@@ -458,8 +458,12 @@ class VoiceInputService : InputMethodService() {
             Log.i(TAG, "utterance %.1fs, infer %dms: %s".format(samples.size / 16000f, cost, text))
             if (isLandscape) micButton.setBackgroundResource(R.drawable.bg_mic_ball)
             if (text.isNotEmpty()) {
-                currentInputConnection?.commitText(text, 1)
-                commitStack.addLast(text.length)
+                // 剥掉模型自加的句尾句号：短语、标题场景几乎都不要；句中逗号/问号等语气标点保留
+                val out = text.removeSuffix("。")
+                if (out.isNotEmpty()) {
+                    currentInputConnection?.commitText(out, 1)
+                    commitStack.addLast(out.length)
+                }
                 setStatus("就绪，按住说话")
             } else {
                 setStatus("未识别到内容")
