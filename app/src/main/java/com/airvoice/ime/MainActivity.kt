@@ -95,6 +95,10 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         refreshStatus()
+        // 自愈：开关打开但进程被杀（重装/系统回收）时，重新拉起常驻服务
+        if (prefs.getBoolean(Prefs.KEY_API_ENABLED, false)) {
+            runCatching { ResidentService.start(this) }
+        }
     }
 
     override fun onPause() {

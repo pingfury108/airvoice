@@ -1,166 +1,176 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 方向 C「声波胶囊」：状态并入麦克风胶囊；工具行常驻（切换钮永不可达盲区） -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="8dp"
-    android:background="#ECEFF1">
-
-    <TextView
-        android:id="@+id/statusText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:padding="4dp"
-        android:textSize="13sp"
-        android:textColor="#6B7280"
-        android:text="加载中…" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/btnSwitchIme"
-            style="@style/KeyButton"
-            android:text="🌐" />
-
-        <Button
-            android:id="@+id/btnKeyPanel"
-            style="@style/KeyButton"
-            android:text="⌨" />
-
-        <Button
-            android:id="@+id/btnHide"
-            style="@style/KeyButton"
-            android:text="▼" />
-
-        <Button
-            android:id="@+id/btnComma"
-            style="@style/KeyButton"
-            android:text="，" />
-
-        <Button
-            android:id="@+id/btnPeriod"
-            style="@style/KeyButton"
-            android:text="。" />
-
-        <Button
-            android:id="@+id/btnUndo"
-            style="@style/KeyButton"
-            android:text="撤回" />
-
-        <Button
-            android:id="@+id/btnDelete"
-            style="@style/KeyButton"
-            android:layout_weight="1.5"
-            android:text="⌫" />
-    </LinearLayout>
+    android:background="#F1F3FE">
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp">
+        android:layout_height="wrap_content">
 
+        <!-- ============ 语音面板 ============ -->
         <LinearLayout
             android:id="@+id/voicePanel"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
+            android:layout_height="186dp"
             android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/micButton"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:layout_margin="2dp"
-            android:textSize="20sp"
-            android:textColor="#FFFFFF"
-            android:background="@drawable/bg_mic"
-            android:text="@string/mic_hint" />
-
-        <!-- 右列：十字方向键 / 空格 / 回车（紧凑窄列） -->
-        <LinearLayout
-            android:layout_width="116dp"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
-
+            <!-- 麦克风大胶囊：圆环麦克风 + 状态文字 + 声波律动条 -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="2"
+                android:id="@+id/micButton"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:elevation="6dp"
+                android:background="@drawable/bg_mic_capsule">
+
+                <FrameLayout
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:background="@drawable/bg_mic_ring">
+
+                    <ImageView
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_mic" />
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/micText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.12"
+                    android:textColor="#FFFFFF"
+                    android:text="按住说话" />
+
+                <LinearLayout
+                    android:id="@+id/waveRow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="16dp"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal"
+                    android:gravity="bottom|center_horizontal">
+
+                    <View android:layout_width="3dp" android:layout_height="5dp" android:background="@drawable/bg_wave_bar" />
+                    <View android:layout_width="3dp" android:layout_height="12dp" android:layout_marginLeft="4dp" android:background="@drawable/bg_wave_bar" />
+                    <View android:layout_width="3dp" android:layout_height="8dp" android:layout_marginLeft="4dp" android:background="@drawable/bg_wave_bar" />
+                    <View android:layout_width="3dp" android:layout_height="16dp" android:layout_marginLeft="4dp" android:background="@drawable/bg_wave_bar" />
+                    <View android:layout_width="3dp" android:layout_height="9dp" android:layout_marginLeft="4dp" android:background="@drawable/bg_wave_bar" />
+                    <View android:layout_width="3dp" android:layout_height="4dp" android:layout_marginLeft="4dp" android:background="@drawable/bg_wave_bar" />
+                    <View android:layout_width="3dp" android:layout_height="11dp" android:layout_marginLeft="4dp" android:background="@drawable/bg_wave_bar" />
+                    <View android:layout_width="3dp" android:layout_height="6dp" android:layout_marginLeft="4dp" android:background="@drawable/bg_wave_bar" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- 右列：方向键 + 空格 + 回车 -->
+            <LinearLayout
+                android:layout_width="100dp"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="6dp"
                 android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    android:layout_weight="1"
-                    android:orientation="horizontal">
+                    android:layout_weight="1.35"
+                    android:orientation="vertical">
 
-                    <Space
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:orientation="horizontal">
 
-                    <Button
-                        android:id="@+id/btnUp"
-                        style="@style/DpadButton"
-                        android:text="▲" />
+                        <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" />
+                        <ImageView
+                            android:id="@+id/btnUp"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:layout_margin="3dp"
+                            android:padding="8dp"
+                            android:src="@drawable/ic_arrow_up"
+                            android:tint="#3B4256"
+                            android:background="@drawable/bg_key_round16" />
+                        <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" />
+                    </LinearLayout>
 
-                    <Space
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/btnLeft"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:layout_margin="3dp"
+                            android:padding="8dp"
+                            android:src="@drawable/ic_arrow_left"
+                            android:tint="#3B4256"
+                            android:background="@drawable/bg_key_round16" />
+                        <ImageView
+                            android:id="@+id/btnDown"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:layout_margin="3dp"
+                            android:padding="8dp"
+                            android:src="@drawable/ic_arrow_down"
+                            android:tint="#3B4256"
+                            android:background="@drawable/bg_key_round16" />
+                        <ImageView
+                            android:id="@+id/btnRight"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:layout_margin="3dp"
+                            android:padding="8dp"
+                            android:src="@drawable/ic_arrow_right"
+                            android:tint="#3B4256"
+                            android:background="@drawable/bg_key_round16" />
+                    </LinearLayout>
                 </LinearLayout>
 
-                <LinearLayout
+                <TextView
+                    android:id="@+id/btnSpace"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
                     android:layout_weight="1"
-                    android:orientation="horizontal">
+                    android:layout_marginTop="6dp"
+                    android:gravity="center"
+                    android:textSize="13sp"
+                    android:textColor="#3B4256"
+                    android:background="@drawable/bg_key_capsule"
+                    android:text="空格" />
 
-                    <Button
-                        android:id="@+id/btnLeft"
-                        style="@style/DpadButton"
-                        android:text="◀" />
-
-                    <Button
-                        android:id="@+id/btnDown"
-                        style="@style/DpadButton"
-                        android:text="▼" />
-
-                    <Button
-                        android:id="@+id/btnRight"
-                        style="@style/DpadButton"
-                        android:text="▶" />
-                </LinearLayout>
+                <TextView
+                    android:id="@+id/btnEnter"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="#3D5AFE"
+                    android:background="@drawable/bg_key_capsule_tint"
+                    android:text="⏎" />
             </LinearLayout>
-
-            <Button
-                android:id="@+id/btnSpace"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:layout_margin="2dp"
-                android:textColor="#374151"
-                android:background="@drawable/bg_key"
-                android:text="空格" />
-
-            <Button
-                android:id="@+id/btnEnter"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:layout_margin="2dp"
-                android:textColor="#3D5AFE"
-                android:background="@drawable/bg_key_enter"
-                android:text="⏎" />
-        </LinearLayout>
         </LinearLayout>
 
-        <!-- 按键面板：内容由 KeyPanel 代码生成 -->
+        <!-- ============ 按键面板（代码生成，10dp 圆角键） ============ -->
         <LinearLayout
             android:id="@+id/keyPanel"
             android:layout_width="match_parent"
@@ -168,4 +178,106 @@
             android:orientation="vertical"
             android:visibility="gone" />
     </FrameLayout>
+
+    <!-- 工具行：常驻（语言芯片 / 切换输入法 / 语音↔按键切换 / 收起 / 标点 / 撤回 / 删除） -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/btnLang"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1.35"
+            android:layout_margin="3dp"
+            android:gravity="center"
+            android:textSize="11.5sp"
+            android:textStyle="bold"
+            android:textColor="#3D5AFE"
+            android:background="@drawable/bg_key_capsule_tint"
+            android:text="自动 ▸" />
+
+        <ImageView
+            android:id="@+id/btnSwitchIme"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_margin="3dp"
+            android:padding="10dp"
+            android:src="@drawable/ic_globe"
+            android:tint="#3B4256"
+            android:background="@drawable/bg_key_capsule" />
+
+        <ImageView
+            android:id="@+id/btnKeyPanel"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_margin="3dp"
+            android:padding="10dp"
+            android:src="@drawable/ic_keyboard"
+            android:tint="#3B4256"
+            android:background="@drawable/bg_key_capsule" />
+
+        <ImageView
+            android:id="@+id/btnHide"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_margin="3dp"
+            android:padding="10dp"
+            android:src="@drawable/ic_chevron_down"
+            android:tint="#3B4256"
+            android:background="@drawable/bg_key_capsule" />
+
+        <TextView
+            android:id="@+id/btnComma"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_margin="3dp"
+            android:gravity="center"
+            android:paddingBottom="5dp"
+            android:textSize="16sp"
+            android:textColor="#3B4256"
+            android:background="@drawable/bg_key_capsule"
+            android:text="，" />
+
+        <TextView
+            android:id="@+id/btnPeriod"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_margin="3dp"
+            android:gravity="center"
+            android:paddingBottom="5dp"
+            android:textSize="16sp"
+            android:textColor="#3B4256"
+            android:background="@drawable/bg_key_capsule"
+            android:text="。" />
+
+        <ImageView
+            android:id="@+id/btnUndo"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1.6"
+            android:layout_margin="3dp"
+            android:padding="10dp"
+            android:src="@drawable/ic_undo"
+            android:tint="#3B4256"
+            android:background="@drawable/bg_key_capsule" />
+
+        <ImageView
+            android:id="@+id/btnDelete"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_margin="3dp"
+            android:padding="10dp"
+            android:src="@drawable/ic_backspace"
+            android:tint="#3B4256"
+            android:background="@drawable/bg_key_capsule" />
+    </LinearLayout>
 </LinearLayout>

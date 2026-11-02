@@ -1,0 +1,18 @@
+{
+  "type": "design",
+  "designSystems": [],
+  "primaryDesignSystem": null,
+  "assets": {
+    "AirVoice UI 重设计评审": {
+      "versions": [
+        {
+          "path": "design-review.html",
+          "createdAt": "2026-11-01T14:43:28.059Z",
+          "status": "needs-review"
+        }
+      ]
+    }
+  },
+  "createdAt": "2026-11-01T14:43:28.061Z",
+  "updatedAt": "2026-11-01T14:58:02.284Z"
+}

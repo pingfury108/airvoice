@@ -176,13 +176,14 @@ class KeyPanel(
                 val active = spec.modifier?.invoke() == true
                 setBackgroundResource(
                     when {
-                        active || spec.accent -> R.drawable.bg_key_enter
-                        else -> R.drawable.bg_key
+                        active || spec.accent -> R.drawable.bg_key_round10_tint
+                        else -> R.drawable.bg_key_round10
                     },
                 )
                 setTextColor(
-                    Color.parseColor(if (active || spec.accent) "#3D5AFE" else "#374151"),
+                    Color.parseColor(if (active || spec.accent) "#3D5AFE" else "#3B4256"),
                 )
+                isAllCaps = false // 否则 Button 默认全大写，字母行会变成 QWERTY
                 setOnClickListener {
                     spec.onTap()
                     if (spec.modifier != null) render() // 修饰键高亮刷新

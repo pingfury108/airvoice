@@ -19,8 +19,8 @@ android {
         applicationId = "com.airvoice.ime"
         minSdk = 24
         targetSdk = 34
-        versionCode = 3
-        versionName = "0.3.0"
+        versionCode = 4
+        versionName = "0.4.0"
 
         ndk { abiFilters += listOf("arm64-v8a") } // 只打真机架构，去掉 x86 模拟器库
     }

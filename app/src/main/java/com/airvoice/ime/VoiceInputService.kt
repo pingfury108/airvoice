@@ -1,7 +1,9 @@
 package com.airvoice.ime
 
+import android.animation.ValueAnimator
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -14,9 +16,11 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.WindowManager
+import android.view.animation.LinearInterpolator
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import kotlinx.coroutines.CoroutineScope
@@ -41,10 +45,16 @@ class VoiceInputService : InputMethodService() {
     private var cancelled = false
     private val commitStack = ArrayDeque<Int>() // 每次上屏长度，用于撤回
 
-    private var statusText: TextView? = null // 横屏悬浮球布局无此视图
-    private lateinit var micButton: Button
-    private var enterButton: Button? = null
+    private var statusText: TextView? = null // C 竖屏布局无独立状态行；横屏也无
+    private lateinit var micButton: View
+    private var micText: TextView? = null    // C 方向：状态并入麦克风胶囊
+    private var waveBars: List<View> = emptyList()
+    private var waveAnim: ValueAnimator? = null
+    private var enterButton: TextView? = null
+    private var langKey: TextView? = null
     private var isLandscape = false
+
+    private val langOrder = listOf("" to "自动", "zh" to "中文", "yue" to "粤语", "en" to "English")
 
     override fun onCreate() {
         super.onCreate()
@@ -79,6 +89,15 @@ class VoiceInputService : InputMethodService() {
         val view = layoutInflater.inflate(R.layout.input_view, null) // 横屏自动用 layout-land
         statusText = view.findViewById(R.id.statusText)
         micButton = view.findViewById(R.id.micButton)
+        micText = view.findViewById(R.id.micText)
+        view.findViewById<LinearLayout?>(R.id.waveRow)?.let { row ->
+            waveBars = (0 until row.childCount).map { row.getChildAt(it) }
+            view.post { waveBars.forEach { it.pivotY = it.height.toFloat() } }
+        }
+        view.findViewById<TextView>(R.id.btnLang)?.let {
+            langKey = it
+            it.text = chipLabel(prefs.getString(Prefs.KEY_LANGUAGE, "") ?: "")
+        }
 
         if (isLandscape) {
             setupBall()
@@ -119,12 +138,13 @@ class VoiceInputService : InputMethodService() {
     private fun setupKeyPanel(view: View) {
         val voicePanel = view.findViewById<View>(R.id.voicePanel) ?: return
         val keyPanel = view.findViewById<LinearLayout>(R.id.keyPanel) ?: return
-        view.findViewById<Button>(R.id.btnKeyPanel)?.let { toggle ->
+        view.findViewById<ImageView>(R.id.btnKeyPanel)?.let { toggle ->
             toggle.setOnClickListener {
                 val showKeys = keyPanel.visibility != View.VISIBLE
                 voicePanel.visibility = if (showKeys) View.GONE else View.VISIBLE
                 keyPanel.visibility = if (showKeys) View.VISIBLE else View.GONE
-                toggle.text = if (showKeys) "🎤" else "⌨"
+                // 切换钮状态反转：按键面板时显示麦克风图标，回语音面板时显示键盘图标
+                toggle.setImageResource(if (showKeys) R.drawable.ic_mic else R.drawable.ic_keyboard)
             }
         }
         KeyPanel(this, object : KeyPanel.Listener {
@@ -178,6 +198,52 @@ class VoiceInputService : InputMethodService() {
         super.onWindowShown()
         // 系统弹出 IME 窗口时可能重置属性，重放一次
         if (isLandscape && ::micButton.isInitialized) micButton.post { applyBallWindow() }
+    }
+
+    private fun chipLabel(lang: String): String =
+        (langOrder.firstOrNull { it.first == lang } ?: langOrder[0]).second + " ▸"
+
+    /** 语言芯片：点按循环 自动→中文→粤语→English，即时重建识别器 */
+    private fun cycleLanguage() {
+        val cur = prefs.getString(Prefs.KEY_LANGUAGE, "") ?: ""
+        val idx = langOrder.indexOfFirst { it.first == cur }
+        val next = langOrder[(idx + 1).mod(langOrder.size)]
+        prefs.edit().putString(Prefs.KEY_LANGUAGE, next.first).apply()
+        langKey?.text = chipLabel(next.first)
+        setStatus("识别语言：${next.second}")
+        serviceScope.launch {
+            try {
+                EnginePool.ensure(this@VoiceInputService, next.first)
+                setStatus("就绪，按住说话")
+            } catch (e: Exception) {
+                Log.e(TAG, "language switch failed", e)
+                setStatus("语言切换失败: ${e.message}")
+            }
+        }
+    }
+
+    private fun startWave() {
+        if (waveBars.isEmpty()) return
+        stopWave()
+        waveAnim = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 700
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = LinearInterpolator()
+            addUpdateListener { anim ->
+                val t = anim.animatedValue as Float
+                waveBars.forEachIndexed { i, bar ->
+                    val phase = t * 2 * Math.PI + i * 0.9
+                    bar.scaleY = 0.35f + 0.65f * (0.5f + 0.5f * Math.sin(phase).toFloat())
+                }
+            }
+            start()
+        }
+    }
+
+    private fun stopWave() {
+        waveAnim?.cancel()
+        waveAnim = null
+        waveBars.forEach { it.scaleY = 1f }
     }
 
     /** 悬浮球手势：点按=开始/停止录音，拖动=移动(记忆位置)，长按=收起键盘 */
@@ -272,41 +338,42 @@ class VoiceInputService : InputMethodService() {
     /** 基础编辑键：切换/收起/光标/标点/空格/删除(按住连删)/撤回/智能回车。横屏悬浮球无这些键，全部空安全绑定 */
     private fun setupEditKeys(view: View) {
         enterButton = view.findViewById(R.id.btnEnter)
-        view.findViewById<Button>(R.id.btnHide)?.setOnClickListener { requestHideSelf(0) }
-        view.findViewById<Button>(R.id.btnComma)?.apply {
+        view.findViewById<View>(R.id.btnHide)?.setOnClickListener { requestHideSelf(0) }
+        view.findViewById<View>(R.id.btnComma)?.apply {
             setOnClickListener { currentInputConnection?.commitText("，", 1) }
             setOnLongClickListener { currentInputConnection?.commitText("、", 1); true }
         }
-        view.findViewById<Button>(R.id.btnPeriod)?.apply {
+        view.findViewById<View>(R.id.btnPeriod)?.apply {
             setOnClickListener { currentInputConnection?.commitText("。", 1) }
             setOnLongClickListener { currentInputConnection?.commitText("！", 1); true }
         }
-        view.findViewById<Button>(R.id.btnLeft)?.setOnClickListener {
+        view.findViewById<View>(R.id.btnLeft)?.setOnClickListener {
             sendDownUpKeyEvents(KeyEvent.KEYCODE_DPAD_LEFT)
         }
-        view.findViewById<Button>(R.id.btnRight)?.setOnClickListener {
+        view.findViewById<View>(R.id.btnRight)?.setOnClickListener {
             sendDownUpKeyEvents(KeyEvent.KEYCODE_DPAD_RIGHT)
         }
-        view.findViewById<Button>(R.id.btnUp)?.setOnClickListener {
+        view.findViewById<View>(R.id.btnUp)?.setOnClickListener {
             sendDownUpKeyEvents(KeyEvent.KEYCODE_DPAD_UP)
         }
-        view.findViewById<Button>(R.id.btnDown)?.setOnClickListener {
+        view.findViewById<View>(R.id.btnDown)?.setOnClickListener {
             sendDownUpKeyEvents(KeyEvent.KEYCODE_DPAD_DOWN)
         }
-        view.findViewById<Button>(R.id.btnSpace)?.setOnClickListener {
+        view.findViewById<View>(R.id.btnSpace)?.setOnClickListener {
             currentInputConnection?.commitText(" ", 1)
         }
-        view.findViewById<Button>(R.id.btnSwitchIme)?.setOnClickListener {
+        view.findViewById<View>(R.id.btnSwitchIme)?.setOnClickListener {
             getSystemService(InputMethodManager::class.java)?.showInputMethodPicker()
         }
-        view.findViewById<Button>(R.id.btnUndo)?.setOnClickListener {
+        view.findViewById<View>(R.id.btnUndo)?.setOnClickListener {
             val len = commitStack.removeLastOrNull()
             if (len != null) currentInputConnection?.deleteSurroundingText(len, 0)
         }
         enterButton?.setOnClickListener { performEnter() }
+        view.findViewById<View>(R.id.btnLang)?.setOnClickListener { cycleLanguage() }
 
         var repeatJob: Job? = null
-        view.findViewById<Button>(R.id.btnDelete)?.setOnTouchListener { _, event ->
+        view.findViewById<View>(R.id.btnDelete)?.setOnTouchListener { _, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     deleteOneChar()
@@ -347,6 +414,7 @@ class VoiceInputService : InputMethodService() {
         }
         // 语言设置变化时重建识别器
         val lang = prefs.getString(Prefs.KEY_LANGUAGE, "") ?: ""
+        langKey?.text = chipLabel(lang)
         val ready = EnginePool.tryReady()
         if (ready != null && ready.language != lang) {
             setStatus("切换识别语言…")
@@ -392,9 +460,10 @@ class VoiceInputService : InputMethodService() {
         val rec = AudioRecorder()
         recorder = rec
         rec.start(serviceScope)
-        setStatus("🎤 录音中… 上滑取消")
-        micButton.text = if (isLandscape) "🎤" else "松手结束 · 上滑取消"
-        micButton.setBackgroundResource(if (isLandscape) R.drawable.bg_mic_ball_recording else R.drawable.bg_mic_recording)
+        setStatus("🎤 录音中…")
+        setMicState(MicState.RECORDING)
+        micText?.text = "松手结束 · 上滑取消"
+        startWave()
 
         collectJob = serviceScope.launch(Dispatchers.Default) {
             var total = 0
@@ -404,7 +473,7 @@ class VoiceInputService : InputMethodService() {
                 pcmChunks.add(chunk)
                 total += chunk.size
 
-                if (++tick % 3 == 0) { // ~120ms 刷新一次音量条
+                if (++tick % 3 == 0 && statusText != null) { // 音量条：仅独立状态行存在时展示
                     val rms = sqrt(chunk.fold(0.0) { acc, v -> acc + v * v } / chunk.size)
                     val level = (rms * 40).toInt().coerceIn(1, 10)
                     launch(Dispatchers.Main) {
@@ -421,8 +490,8 @@ class VoiceInputService : InputMethodService() {
         rec.stop()
         collectJob?.cancel()
         collectJob = null
-        micButton.text = if (isLandscape) "🎤" else getString(R.string.mic_hint)
-        micButton.setBackgroundResource(if (isLandscape) R.drawable.bg_mic_ball else R.drawable.bg_mic)
+        setMicState(MicState.IDLE)
+        stopWave()
 
         if (cancel) {
             pcmChunks.clear()
@@ -446,7 +515,7 @@ class VoiceInputService : InputMethodService() {
         pcmChunks.clear()
 
         setStatus("识别中…")
-        if (isLandscape) micButton.setBackgroundResource(R.drawable.bg_mic_ball_processing)
+        setMicState(MicState.PROCESSING)
         serviceScope.launch {
             val t0 = System.currentTimeMillis()
             val text = EnginePool.recognize(
@@ -456,7 +525,7 @@ class VoiceInputService : InputMethodService() {
             )
             val cost = System.currentTimeMillis() - t0
             Log.i(TAG, "utterance %.1fs, infer %dms: %s".format(samples.size / 16000f, cost, text))
-            if (isLandscape) micButton.setBackgroundResource(R.drawable.bg_mic_ball)
+            setMicState(MicState.IDLE)
             if (text.isNotEmpty()) {
                 // 剥掉模型自加的句尾句号：短语、标题场景几乎都不要；句中逗号/问号等语气标点保留
                 val out = text.removeSuffix("。")
@@ -471,12 +540,38 @@ class VoiceInputService : InputMethodService() {
         }
     }
 
+    private enum class MicState { IDLE, RECORDING, PROCESSING }
+
+    /** 麦克风视觉状态：竖屏改胶囊底色，横屏改圆底色 + 图标色 */
+    private fun setMicState(state: MicState) {
+        if (isLandscape) {
+            val bg = when (state) {
+                MicState.IDLE -> R.drawable.bg_circle_white
+                MicState.RECORDING -> R.drawable.bg_circle_rec
+                MicState.PROCESSING -> R.drawable.bg_circle_proc
+            }
+            val tint = if (state == MicState.IDLE) "#3D5AFE" else "#FFFFFF"
+            micButton.setBackgroundResource(bg)
+            (micButton as? ImageView)?.setImageTintList(ColorStateList.valueOf(Color.parseColor(tint)))
+        } else {
+            micButton.setBackgroundResource(
+                when (state) {
+                    MicState.IDLE -> R.drawable.bg_mic_capsule
+                    MicState.RECORDING -> R.drawable.bg_mic_capsule_rec
+                    MicState.PROCESSING -> R.drawable.bg_mic_capsule_proc
+                },
+            )
+        }
+    }
+
     private fun setStatus(text: String) {
         statusText?.text = text
+        micText?.text = text
     }
 
     override fun onDestroy() {
         recorder?.stop()
+        stopWave()
         // 不释放 EnginePool：模型由常驻 API 服务/进程共享，IME 销毁不应卸载
         serviceScope.cancel()
         super.onDestroy()
@@ -486,7 +581,7 @@ class VoiceInputService : InputMethodService() {
         private const val TAG = "AirVoice"
         private const val MAX_SAMPLES = AsrEngine.SAMPLE_RATE * 60 // 最长 60s
         private const val CANCEL_DISTANCE_PX = 150
-        private const val FLOAT_W_DP = 64     // 横屏悬浮胶囊窗口宽（56胶囊+两侧阴影余量）
-        private const val FLOAT_H_DP = 112    // 胶囊 100dp + 阴影余量
+        private const val FLOAT_W_DP = 56     // 横屏悬浮胶囊窗口宽（52胶囊+阴影余量）
+        private const val FLOAT_H_DP = 100    // 胶囊高 92dp + 阴影余量
     }
 }
